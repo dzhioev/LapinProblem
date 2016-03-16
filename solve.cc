@@ -27,8 +27,8 @@ unsigned cnm(unsigned n, unsigned m) {
 }
 
 std::vector<std::vector<unsigned>> gen_subsets(unsigned n, unsigned m) {
+  if (!n) return {{}};
   std::vector<std::vector<unsigned>> result;
-  if (!n) return std::move(result);
   result.reserve(cnm(n, m));
   unsigned v = (1 << m) - 1;
   while (v < (1 << n)) {
@@ -152,10 +152,23 @@ ull solve(ull n) {
 
   for (ull d = 1; d <= fsn; ++d) {
     ull fsnbd2 = calc_fsnbd2(n, d);
+    ull phi = 0;
     for (ull i = 1; i <= fsnbd2; ++i) {
       find_prime_factors(i, primes, &ps);
+      for (unsigned j = 0; j <= ps.size(); ++j) {
+        ull N = 0;
+        for (const auto& subset: get_subsets(ps.size(), j)) {
+          ull p = 1;
+          for (unsigned s: subset) {
+            p *= ps[s];
+          }
+          N += n / (i * d * d * p) - i / p;
+        }
+        phi += (j % 2) ? -N : N;
+      }
       on_job_done();
     }
+    result += phi * d;
   }
 
   result *= 2;
@@ -166,7 +179,7 @@ ull solve(ull n) {
 
 int main(int argc, char** argv) {
   if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " N\n";
+    std::cerr << "Usage: " << argv[0] << " N" << std::endl;
     return 1;
   }
 
@@ -177,7 +190,8 @@ int main(int argc, char** argv) {
     }
     n = std::stoull(argv[1]);
   } catch (...) {
-    std::cerr << "N is not an nonnegative integer number or is too large.\n";
+    std::cerr << "N is not an nonnegative integer number or is too large."
+              << std::endl;
     return 2;
   }
   ull res = solve(n);
